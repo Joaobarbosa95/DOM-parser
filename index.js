@@ -3,16 +3,19 @@ const example = `<!DOCTYPE html>
     <head></head>
     <body>
         <p>Hello</p>
+        <img />
     </body>
 </html>
 `
 
 const TOKEN_TYPE = {
-             OPEN: 0,
-            CLOSE: 1,
-        DOC_START: 2,
-      CLOSE_START: 3,
-              EOF: 4,
+            EOF: 0,
+       DOC_OPEN: 1,
+           OPEN: 2,
+          CLOSE: 3,
+     OPEN_CLOSE: 4,
+ SELF_CLOSE_TAG: 5,
+         STRING: 6,
 }
 
 class Token {
@@ -29,9 +32,8 @@ class Token {
 }
 
 class Scanner {
-    source = null 
+    source = null
     tokens = []
-
     start = 0
     current = 0
     line = 1
@@ -43,10 +45,16 @@ class Scanner {
     scanTokens() {
         while(!this.isAtEnd()) {
             this.start = this.current
-            scanToken()
+            this.scanToken()
         }
 
-        tokens.push(new Token(TOKEN_TYPE.EOF, "", null, this.line))
+        this.tokens.push(new Token({
+            type: TOKEN_TYPE.EOF,
+            lexeme: "", 
+            literal: null,
+            line: this.line
+        }))
+
         return this.tokens
     }
 
@@ -55,29 +63,39 @@ class Scanner {
     }
 
     scanToken() {
-        let c = advance()
+        let c = this.advance()
 
         switch(c) {
             case "<": {
                 if(this.match("!")) {
-                    this.addToken(TOKEN_TYPE.DOC_START)
+                    this.addToken(TOKEN_TYPE.DOC_OPEN)
                     break
                 } else if(this.match("/")) {
-                    this.addToken(TOKEN_TYPE.CLOSE_START)
+                    this.addToken(TOKEN_TYPE.OPEN_CLOSE)
                     break
                 } else {
                     this.addToken(TOKEN_TYPE.OPEN)
                     break
                 }
             }
-            case ">": this.addToken(TOKEN_TYPE.GREATER_THAN); break
-            default: console.log("SCAN ERROR AT LINE %i", this.line); break
+            case "/": {
+                if(this.match(">")) {
+                    this.addToken(TOKEN_TYPE.SELF_CLOSE_TAG)
+                    break
+                }
+            }
+            case ">": this.addToken(TOKEN_TYPE.CLOSE); break;
+            case "\n": this.line++; break;
+            default: {
+                if("")  {}
+                //console.log("SCAN ERROR AT LINE %i", this.line); break
+            }
         }
     }
 
     add(type, literal) {
         let text = this.source.substring(this.start, this.current)
-        tokens.push(new Token({
+        this.tokens.push(new Token({
             type: type,
             lexeme: text,
             literal: literal,
@@ -86,15 +104,15 @@ class Scanner {
     }
 
     addToken(type) {
-        add(type, null) 
+        this.add(type, null) 
     }
 
     advance() {
-        this.source.charAt(this.current++)
+        return this.source.charAt(this.current++)
     }
 
     match(expected) {
-        if(isAtEnd()) return false
+        if(this.isAtEnd()) return false
         if(this.source.charAt(this.current) != expected) return false
 
         this.current++
@@ -102,7 +120,8 @@ class Scanner {
     }
 }
 
+const scanner = new Scanner(example)
 
+const tokens = scanner.scanTokens()
 
-
-
+console.log(tokens)
