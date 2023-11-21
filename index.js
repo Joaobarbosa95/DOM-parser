@@ -2,8 +2,8 @@ const example = `<!DOCTYPE html>
 <html>
     <head></head>
     <body>
-        <p>Hello</p>
-        <img />
+        <p id="msg">Hello</p>
+        <img src="/image.png" />
     </body>
 </html>
 `
@@ -69,14 +69,18 @@ class Scanner {
             case "<": {
                 if(this.match("!")) {
                     this.addToken(TOKEN_TYPE.DOC_OPEN)
-                    break
+                    this.start += 2
                 } else if(this.match("/")) {
                     this.addToken(TOKEN_TYPE.OPEN_CLOSE)
-                    break
+                    this.start += 2
                 } else {
                     this.addToken(TOKEN_TYPE.OPEN)
-                    break
+                    this.start++
                 }
+
+                this.getTag()
+
+                break
             }
             case "/": {
                 if(this.match(">")) {
@@ -87,7 +91,6 @@ class Scanner {
             case ">": this.addToken(TOKEN_TYPE.CLOSE); break;
             case "\n": this.line++; break;
             default: {
-                if("")  {}
                 //console.log("SCAN ERROR AT LINE %i", this.line); break
             }
         }
@@ -117,6 +120,18 @@ class Scanner {
 
         this.current++
         return true
+    }
+
+    getTag() {
+        while(this.advance() !== ">") {}
+
+        if(this.source.charAt(this.current - 2) === "/") {
+            this.current -= 2
+        } else {
+            this.current--
+        }
+
+        this.add(TOKEN_TYPE.STRING, null) 
     }
 }
 
