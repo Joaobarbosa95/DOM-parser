@@ -1,13 +1,3 @@
-const example = `<!DOCTYPE html>
-<html>
-    <head></head>
-    <body>
-        <p id="msg">Hello</p>
-        <img src="/image.png" />
-    </body>
-</html>
-`
-
 const TOKEN_TYPE = {
             EOF: 0,
        DOC_OPEN: 1,
@@ -16,6 +6,7 @@ const TOKEN_TYPE = {
      OPEN_CLOSE: 4,
  SELF_CLOSE_TAG: 5,
          STRING: 6,
+        CONTENT: 7,
 }
 
 class Token {
@@ -50,7 +41,7 @@ class Scanner {
 
         this.tokens.push(new Token({
             type: TOKEN_TYPE.EOF,
-            lexeme: "", 
+            lexeme: null, 
             literal: null,
             line: this.line
         }))
@@ -90,8 +81,9 @@ class Scanner {
             }
             case ">": this.addToken(TOKEN_TYPE.CLOSE); break;
             case "\n": this.line++; break;
+            case " ": break;
             default: {
-                //console.log("SCAN ERROR AT LINE %i", this.line); break
+                this.getText()             
             }
         }
     }
@@ -133,10 +125,15 @@ class Scanner {
 
         this.add(TOKEN_TYPE.STRING, null) 
     }
+
+    getText() {
+        while(this.advance() !== "<") {}
+
+        this.current--
+        this.add(TOKEN_TYPE.CONTENT, null) 
+    }
 }
 
-const scanner = new Scanner(example)
+module.exports = Scanner
 
-const tokens = scanner.scanTokens()
 
-console.log(tokens)
